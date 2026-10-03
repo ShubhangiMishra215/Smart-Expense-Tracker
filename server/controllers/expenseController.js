@@ -1,4 +1,4 @@
-import Expense from "../models/Expense.js";
+import { parseExpenseText } from "../services/aiParserService.js";
 import {
   addExpense,
   changeExpense,
@@ -86,3 +86,28 @@ export const deleteExpense = async (req, res, next) => {
     next(error);
   }
 };
+
+export const parseExpenseTextController = async (req, res, next) => {
+  try{
+    const response = req.body.text;
+    if (typeof response !== "string" || !response.trim()) {
+      return res.status(400).json({
+        success:false,
+        message: "No user input"
+      });
+    }
+
+    const parsed = await parseExpenseText(response);
+    const expenses = await Promise.all(
+      parsed.map((item) => addExpense(req.user.id, item))
+    )
+        
+    return res.status(201).json({
+      success:true,
+      message:"Response created successfully",
+      expenses
+    })
+  }catch (error) {
+    next(error);
+  }
+}
