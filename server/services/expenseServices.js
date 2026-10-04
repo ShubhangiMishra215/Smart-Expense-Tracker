@@ -1,3 +1,4 @@
+import CategoryRule from "../models/CategoryRule.js";
 import Expense from "../models/Expense.js";
 import { dateFilters } from "../utils/dateFilters.js";
 
@@ -40,6 +41,12 @@ export const fetchExpenseById = async (expenseId, userId) => {
 
 export const changeExpense = async (expenseId, userId, expenseData) => {
   const { amount, category, description, date } = expenseData;
+
+  const existing = await fetchExpenseById(expenseId, userId);
+  if (!existing) return null;
+
+  const oldCategory = existing.category;
+
   const expense = await Expense.findOneAndUpdate(
     { _id: expenseId, user: userId },
     {
@@ -50,6 +57,19 @@ export const changeExpense = async (expenseId, userId, expenseData) => {
     },
     { new: true, runValidators: true },
   );
+
+  if (category && category != oldCategory) {
+    if (expense.description) {
+      const keyword = expense.description.toLowerCase().trim();
+      if(keyword){
+        await CategoryRule.findOneAndUpdate(
+          { user: userId, keyword },
+          { category },
+          { upsert: true, new: true, runValidators: true },
+        );
+      }      
+    }
+  }
   return expense;
 };
 
