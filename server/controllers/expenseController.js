@@ -1,3 +1,4 @@
+import CategoryRule from "../models/CategoryRule.js";
 import { parseExpenseText } from "../services/aiParserService.js";
 import {
   addExpense,
@@ -88,26 +89,48 @@ export const deleteExpense = async (req, res, next) => {
 };
 
 export const parseExpenseTextController = async (req, res, next) => {
-  try{
+  try {
     const response = req.body.text;
     if (typeof response !== "string" || !response.trim()) {
       return res.status(400).json({
-        success:false,
-        message: "No user input"
+        success: false,
+        message: "No user input",
       });
     }
 
     const parsed = await parseExpenseText(response);
+
+    const rules = await CategoryRule.find({
+      user: req.user.id,
+    });
+
+    const ruleMap = new Map();
+    rules.forEach(element => {
+      ruleMap.set(element.keyword, element.category);
+    });
+    
+
+    const finalItems = parsed.map((item) => {
+      if (item.description) {
+        const key = item.description.toLowerCase().trim();
+        const ruleCat = ruleMap.get(key);
+        if (ruleCat) {
+          return { ...item, category: ruleCat };
+        }        
+      }
+      return item;
+    });
+
     const expenses = await Promise.all(
-      parsed.map((item) => addExpense(req.user.id, item))
-    )
-        
+      finalItems.map((item) => addExpense(req.user.id, item)),
+    );
+
     return res.status(201).json({
-      success:true,
-      message:"Response created successfully",
-      expenses
-    })
-  }catch (error) {
+      success: true,
+      message: "Response created successfully",
+      expenses,
+    });
+  } catch (error) {
     next(error);
   }
-}
+};
