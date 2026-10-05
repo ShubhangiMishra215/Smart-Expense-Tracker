@@ -1,4 +1,4 @@
-import { fetchBudgets, removeBudget, upsertBudget } from "../services/budgetServices.js";
+import { fetchBudgets, getBudgetStatuses, removeBudget, upsertBudget } from "../services/budgetServices.js";
 
 export const setBudget = async (req, res, next) => {
   try {
@@ -40,4 +40,18 @@ export const deleteBudget = async(req,res,next)=>{
     } catch (error) {
         next(error)
     }    
+}
+
+export const getStatus = async(req,res,next)=>{    
+    try {
+       const statuses = await getBudgetStatuses(req.user.id);
+        return res.status(200).json({
+            success:true,
+            message:"Status found successfully",
+            statuses
+        }) 
+    } catch (error) {
+        next(error);
+    }
+    
 }
