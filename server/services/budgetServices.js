@@ -87,3 +87,11 @@ export const getBudgetStatuses = async (userId) => {
     };
   });
 };
+
+export const getBudgetAlert = async(userId, category)=>{
+    const statuses =  await getBudgetStatuses(userId);
+    const entry = statuses.find((item)=>item.category===category);
+    if(!entry) return null;
+    if(entry.status==="ok") return null;
+    else return entry;
+}

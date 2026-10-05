@@ -1,5 +1,6 @@
 import CategoryRule from "../models/CategoryRule.js";
 import { parseExpenseText } from "../services/aiParserService.js";
+import { getBudgetAlert } from "../services/budgetServices.js";
 import {
   addExpense,
   changeExpense,
@@ -12,10 +13,19 @@ export const createExpense = async (req, res, next) => {
   try {
     const expense = await addExpense(req.user.id, req.body);
 
+    let alerts = [];
+    try {
+      const alert = await getBudgetAlert(req.user.id, expense.category);
+      if (alert) alerts.push(alert);
+    } catch (err) {
+      console.error("Budget alert failed:", err);
+    }
+
     return res.status(201).json({
       success: true,
       message: "Expense created successfully",
       expense,
+      alerts,
     });
   } catch (error) {
     next(error);
@@ -105,10 +115,9 @@ export const parseExpenseTextController = async (req, res, next) => {
     });
 
     const ruleMap = new Map();
-    rules.forEach(element => {
+    rules.forEach((element) => {
       ruleMap.set(element.keyword, element.category);
     });
-    
 
     const finalItems = parsed.map((item) => {
       if (item.description) {
@@ -116,7 +125,7 @@ export const parseExpenseTextController = async (req, res, next) => {
         const ruleCat = ruleMap.get(key);
         if (ruleCat) {
           return { ...item, category: ruleCat };
-        }        
+        }
       }
       return item;
     });
@@ -125,10 +134,22 @@ export const parseExpenseTextController = async (req, res, next) => {
       finalItems.map((item) => addExpense(req.user.id, item)),
     );
 
+    let alerts = [];
+    try {
+      const categories = [...new Set(expenses.map((e) => e.category))];
+      const results = await Promise.all(
+        categories.map((c) => getBudgetAlert(req.user.id, c)),
+      );
+      alerts = results.filter(Boolean);
+    } catch (err) {
+      console.error("Budget alert failed:", err);
+    }
+
     return res.status(201).json({
       success: true,
       message: "Response created successfully",
       expenses,
+      alerts
     });
   } catch (error) {
     next(error);
