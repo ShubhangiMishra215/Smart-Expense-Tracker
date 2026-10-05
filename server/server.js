@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import expenseRouter from './routes/expenseRoute.js';
 import userRouter from './routes/userRoute.js';
 import errorHandler from './middleware/errorHandler.js';
+import budgetRouter from './routes/budgetRoute.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.get('/health',(req ,res)=>{
 
 app.use('/api/expenses', expenseRouter)
 app.use('/api/auth',userRouter)
+app.use('/api/budgets',budgetRouter)
 app.use(errorHandler)
 
 app.listen(PORT,()=>{
