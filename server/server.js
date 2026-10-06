@@ -6,6 +6,7 @@ import expenseRouter from './routes/expenseRoute.js';
 import userRouter from './routes/userRoute.js';
 import errorHandler from './middleware/errorHandler.js';
 import budgetRouter from './routes/budgetRoute.js';
+import dashboardRouter from './routes/dashboardRoute.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.get('/health',(req ,res)=>{
 app.use('/api/expenses', expenseRouter)
 app.use('/api/auth',userRouter)
 app.use('/api/budgets',budgetRouter)
+app.use('/api/dashboard',dashboardRouter)
 app.use(errorHandler)
 
 app.listen(PORT,()=>{
