@@ -8,7 +8,7 @@ const expenseSchema = new mongoose.Schema({
     },
     amount:{
         type:Number,  
-        min:[0.01, 'Amount cannot be negative'],      
+        min:[0.01, 'Amount must be greater than 0'],      
         required:true,
     },
     category:{

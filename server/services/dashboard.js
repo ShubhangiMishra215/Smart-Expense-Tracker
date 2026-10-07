@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 import Expense from "../models/Expense.js";
 import { getWindowBoundaries } from "../utils/getWindowBoundaries.js";
+import { getMonthlyExpense } from "./budgetServices.js";
 
 export const getTotalSpend = async (userId, startDate, endDate) => {
-    const userObjectId = new mongoose.Types.ObjectId(userId)
+  const userObjectId = new mongoose.Types.ObjectId(userId);
   const expense = await Expense.aggregate([
     {
       $match: {
@@ -24,7 +25,11 @@ export const getTotalSpend = async (userId, startDate, endDate) => {
 export const getWeeklyComparison = async (userId) => {
   const { today, sevenDaysAgo, fourteenDaysAgo } = getWindowBoundaries();
   const currentTotal = await getTotalSpend(userId, sevenDaysAgo, today);
-  const previousTotal = await getTotalSpend(userId, fourteenDaysAgo, sevenDaysAgo);
+  const previousTotal = await getTotalSpend(
+    userId,
+    fourteenDaysAgo,
+    sevenDaysAgo,
+  );
 
   const difference = currentTotal - previousTotal;
   const percentChange =
@@ -33,4 +38,21 @@ export const getWeeklyComparison = async (userId) => {
       : Math.round((difference / previousTotal) * 100 * 100) / 100;
 
   return { currentTotal, previousTotal, difference, percentChange };
+};
+
+export const getExpenseByCategory = async (userId) => {
+  const expense = await getMonthlyExpense(userId);
+  let total = 0;
+  expense.forEach((amount, category) => {
+    total += amount;
+  });
+
+  const expenseList = Array.from(expense, ([category, amount]) => ({
+    category,
+    amount,
+    percentage: Number(((amount / total) * 100).toFixed(1)),
+  }));
+
+  expenseList.sort((a, b) => b.amount - a.amount);
+  return {total,breakdown:expenseList};
 };
