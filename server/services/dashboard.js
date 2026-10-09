@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Expense from "../models/Expense.js";
 import { getWindowBoundaries } from "../utils/getWindowBoundaries.js";
 import { getMonthlyExpense } from "./budgetServices.js";
+import MinHeap from "../utils/MinHeap.js";
 
 export const getTotalSpend = async (userId, startDate, endDate) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -56,3 +57,27 @@ export const getExpenseByCategory = async (userId) => {
   expenseList.sort((a, b) => b.amount - a.amount);
   return {total,breakdown:expenseList};
 };
+
+export const getTopK = async(userId,k,startDate,nextStart)=>{
+  if(k<=0) return [];
+  const expense = await Expense.find(
+    {
+      
+        user:userId,
+        date: { $gte: startDate, $lt: nextStart },
+    },
+    
+  )
+  const heap = new MinHeap();
+  expense.forEach((exp)=>{
+    
+    if(heap.size()<k){
+      heap.push(exp);
+    }
+    else if(exp.amount > heap.peek().amount){
+      heap.pop();
+      heap.push(exp);
+    }
+  })
+  return heap.toArray().sort((a, b) => b.amount - a.amount);
+}
