@@ -1,5 +1,6 @@
 import {
   getExpenseByCategory,
+  getMonthlySummary,
   getTopK,
   getWeeklyComparison,
 } from "../services/dashboard.js";
@@ -61,6 +62,37 @@ export const getTopKExpense = async (req, res, next) => {
       message: "Top expenses fetched successfully",
       response,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMonthlySummaryReport = async (req, res, next) => {
+  try {
+    const {month, year } = req.query;
+
+    const Month = Number(month);
+    const Year = Number(year);
+    
+    if (
+      !Number.isInteger(Month) ||
+      Month < 1 ||
+      Month > 12 ||
+      !Number.isInteger(Year) ||
+      Year < 2000
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect or missing values",
+      });
+    }
+
+    const response = await getMonthlySummary(req.user.id, Month, Year);
+    return res.status(200).json({
+        success:true,
+        message:"Monthly report generated",
+        response
+    })
   } catch (error) {
     next(error);
   }
