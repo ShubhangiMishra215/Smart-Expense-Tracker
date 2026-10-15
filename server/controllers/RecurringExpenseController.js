@@ -1,7 +1,9 @@
 import {
   addRecurringExpense,
   fetchRecurringExpense,
+  deactivateRecurringExpense,
   removeRecurringExpense,
+  reactivateRecurringExpense,
 } from "../services/RecurringExpenseService.js";
 
 export const createRecurringExpense = async (req, res, next) => {
@@ -44,3 +46,29 @@ export const deleteRecurringExpense = async (req, res, next) => {
     next(error);
   }
 };
+
+export const pauseRecurringExpense = async(req ,res, next)=>{
+    try {
+        const expense = await deactivateRecurringExpense(req.user.id,req.params.id);
+        return res.status(200).json({
+            success:true,
+            message:"Recurring expense paused successfully",
+            expense
+        })
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const resumeRecurringExpense = async(req ,res ,next)=>{
+    try {
+        const expense = await reactivateRecurringExpense(req.user.id, req.params.id);
+        return res.status(200).json({
+            success:true,
+            message:"Recurring expense resumed successfully",
+            expense
+        })
+    } catch (error) {
+        next(error)
+    }
+}

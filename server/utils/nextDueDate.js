@@ -19,5 +19,5 @@ export const getNextDueDate = (currentDate, frequency, dayOfMonth) => {
     return new Date(year, nextMonth, day);
   }
 
-  throw new Error(`Unknown frequency: ${frequency}`);
+  throw new AppError(`Unknown frequency: ${frequency}`);
 };
