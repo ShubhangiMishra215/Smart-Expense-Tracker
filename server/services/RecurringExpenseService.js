@@ -1,4 +1,5 @@
 import RecurringExpense from "../models/RecurringExpense.js";
+import AppError from "../utils/AppError.js";
 
 export const addRecurringExpense = async(userId , expenseData)=>{
     
@@ -21,4 +22,18 @@ export const addRecurringExpense = async(userId , expenseData)=>{
     })
     const expense = await newExpense.save();
     return expense;        
+}
+
+export const fetchRecurringExpense = async(userId)=>{
+    const expense = await RecurringExpense.find({user:userId, isActive:true});
+    return expense;
+}
+
+export const removeRecurringExpense = async(userId,ruleId)=>{
+    const expense = await RecurringExpense.findOneAndDelete({
+        user:userId,
+        _id:ruleId
+    });
+
+    return expense
 }
