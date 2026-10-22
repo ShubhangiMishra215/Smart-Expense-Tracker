@@ -84,3 +84,11 @@ export const reactivateRecurringExpense = async (userId, ruleId) => {
   if (!expense) throw new AppError("No such rule found", 404);
   return expense;
 };
+
+export const getDueRecurringExpenses = async()=>{
+  const expense = await RecurringExpense.find({
+    isActive:true,
+    nextDueDate: { $lte: new Date() }
+  })
+  return expense;
+}

@@ -8,6 +8,7 @@ import errorHandler from './middleware/errorHandler.js';
 import budgetRouter from './routes/budgetRoute.js';
 import dashboardRouter from './routes/dashboardRoute.js';
 import recurringRouter from './routes/recurringExpenseRoute.js';
+import { startRecurringJob } from './services/recurringJob.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,8 @@ app.get('/health',(req ,res)=>{
         status:'ok'
     })
 });
+
+startRecurringJob();
 
 app.use('/api/expenses', expenseRouter)
 app.use('/api/auth',userRouter)
