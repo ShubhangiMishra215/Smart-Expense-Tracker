@@ -1,5 +1,5 @@
 import nodeCron from "node-cron";
-import { createExpenseFromRule, getDueRecurringExpenses } from "./RecurringExpenseService.js";
+import { advanceRecurringRule, createExpenseFromRule, getDueRecurringExpenses } from "./RecurringExpenseService.js";
 
 export const startRecurringJob = () => {
   nodeCron.schedule("* * * * *", async () => {
@@ -11,6 +11,7 @@ export const startRecurringJob = () => {
       for (const rule of dueRules) {
         try {
           await createExpenseFromRule(rule);
+          await advanceRecurringRule(rule);
         } catch (error) {
           console.error(`Failed for rule ${rule._id}:`, error);
         }

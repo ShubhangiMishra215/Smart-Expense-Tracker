@@ -86,13 +86,13 @@ export const reactivateRecurringExpense = async (userId, ruleId) => {
   return expense;
 };
 
-export const getDueRecurringExpenses = async()=>{
+export const getDueRecurringExpenses = async () => {
   const expense = await RecurringExpense.find({
-    isActive:true,
-    nextDueDate: { $lte: new Date() }
-  })
+    isActive: true,
+    nextDueDate: { $lte: new Date() },
+  });
   return expense;
-}
+};
 
 export const createExpenseFromRule = async (rule) => {
   const expense = await Expense.create({
@@ -103,4 +103,14 @@ export const createExpenseFromRule = async (rule) => {
     date: rule.nextDueDate,
   });
   return expense;
+};
+
+export const advanceRecurringRule = async (rule) => {
+  rule.nextDueDate = getNextDueDate(
+    rule.nextDueDate,
+    rule.frequency,
+    rule.dayOfMonth
+  );
+  await rule.save();
+  return rule;
 };
