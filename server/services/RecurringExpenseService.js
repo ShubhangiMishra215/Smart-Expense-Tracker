@@ -1,3 +1,4 @@
+import Expense from "../models/Expense.js";
 import RecurringExpense from "../models/RecurringExpense.js";
 import AppError from "../utils/AppError.js";
 import { getNextDueDate } from "../utils/nextDueDate.js";
@@ -92,3 +93,14 @@ export const getDueRecurringExpenses = async()=>{
   })
   return expense;
 }
+
+export const createExpenseFromRule = async (rule) => {
+  const expense = await Expense.create({
+    user: rule.user,
+    amount: rule.amount,
+    category: rule.category,
+    description: rule.description,
+    date: rule.nextDueDate,
+  });
+  return expense;
+};
