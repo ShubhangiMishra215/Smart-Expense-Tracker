@@ -95,6 +95,15 @@ export const getDueRecurringExpenses = async () => {
 };
 
 export const createExpenseFromRule = async (rule) => {
+  const alreadyExists = await Expense.exists({
+    user: rule.user,
+    amount: rule.amount,
+    category: rule.category,
+    description: rule.description,
+    date: rule.nextDueDate,
+  });
+  if (alreadyExists) return null;
+
   const expense = await Expense.create({
     user: rule.user,
     amount: rule.amount,
@@ -109,8 +118,23 @@ export const advanceRecurringRule = async (rule) => {
   rule.nextDueDate = getNextDueDate(
     rule.nextDueDate,
     rule.frequency,
-    rule.dayOfMonth
+    rule.dayOfMonth,
   );
   await rule.save();
   return rule;
+};
+
+export const processRule = async (rule) => {
+  const currDate = new Date();
+  let cnt = 0;
+
+  while (rule.nextDueDate <= currDate && cnt < 24) {
+    await createExpenseFromRule(rule);
+    await advanceRecurringRule(rule);
+    cnt++;
+  }
+
+  if (rule.nextDueDate <= currDate) {
+    console.warn(`Rule ${rule._id} still due after ${cnt} cycles, stopping`);
+  }
 };

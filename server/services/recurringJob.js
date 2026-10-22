@@ -1,23 +1,29 @@
 import nodeCron from "node-cron";
-import { advanceRecurringRule, createExpenseFromRule, getDueRecurringExpenses } from "./RecurringExpenseService.js";
+import {
+  getDueRecurringExpenses,
+  processRule,
+} from "./RecurringExpenseService.js";
 
 export const startRecurringJob = () => {
-  nodeCron.schedule("* * * * *", async () => {
-    try {
-      const dueRules = await getDueRecurringExpenses();
-      console.log(dueRules.length);
-      console.log("Run it daily");     
+  nodeCron.schedule(
+    "5 0 * * *",
+    async () => {
+      try {
+        const dueRules = await getDueRecurringExpenses();
+        console.log(dueRules.length);
+        console.log("Run it daily");
 
-      for (const rule of dueRules) {
-        try {
-          await createExpenseFromRule(rule);
-          await advanceRecurringRule(rule);
-        } catch (error) {
-          console.error(`Failed for rule ${rule._id}:`, error);
+        for (const rule of dueRules) {
+          try {
+            await processRule(rule);
+          } catch (error) {
+            console.error(`Failed for rule ${rule._id}:`, error);
+          }
         }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
-    }
-  });
+    },
+    { timezone: "Asia/Kolkata" },
+  );
 };
