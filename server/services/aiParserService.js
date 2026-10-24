@@ -38,6 +38,17 @@ const summarySchema = {
   required: ["summary", "tips"],
 };
 
+const receiptSchema = {
+  type: "object",
+  properties: {
+    amount: { type: "number", nullable: true },
+    date: { type: "string", nullable: true },
+    description: { type: "string", nullable: true },
+    category: { type: "string", enum: CATEGORIES },
+  },
+  required: ["amount", "date", "description", "category"],
+};
+
 export const parseExpenseText = async (text) => {
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -156,4 +167,69 @@ let interaction;
   }
 
   return { summary: parsed.summary, tips: parsed.tips };
+};
+
+export const parseReceipt = async (image) => {
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }); // YYYY-MM-DD
+
+  const prompt = `This is an image of a receipt. Extract ONE expense from it.
+    - amount: the final total paid, in INR, as a plain number (no symbols or commas). Not an individual item price.
+    - date: the receipt date as YYYY-MM-DD. Today is ${today}; use it only to resolve ambiguous years.
+    - description: the merchant name or a short summary.
+    - category: one of ${CATEGORIES.join(", ")}.
+    If you cannot clearly find the amount or the date, return null for that field. Do not guess.`;
+
+  let interaction;
+
+  try {
+    interaction = await ai.interactions.create({
+      model: "gemini-3.8-flash",
+      input: [
+        { type: "text", text: prompt },
+        {
+          type: "image",
+          data: image.buffer.toString("base64"),
+          mime_type: image.mimetype,
+        },
+      ],
+      response_format: {
+        type: "text",
+        mime_type: "application/json",
+        schema: receiptSchema,
+      },
+    });
+  } catch (error) {
+    console.error("Error parsing receipt:", error);
+    if (error.status === 429) {
+      throw new AppError("Rate limit exceeded. Please try again later.", 429);
+    }
+    throw new AppError("AI service unavailable", 502);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(interaction.output_text);
+    
+  } catch (error) {
+    throw new AppError("Could not understand the AI response", 502);
+  }
+  console.log("RAW:", interaction.output_text);
+
+  const validDate =
+    typeof parsed.date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) &&
+    !isNaN(new Date(parsed.date).getTime());
+
+  if (typeof parsed.amount !== "number" || parsed.amount <= 0 || !validDate) {
+    throw new AppError("Could not read the amount and date from the receipt", 422);
+  }
+
+  return {
+    amount: parsed.amount,
+    date: parsed.date,
+    category: CATEGORIES.includes(parsed.category) ? parsed.category : "Others",
+    description: typeof parsed.description === "string" ? parsed.description : "",
+  };
 };
