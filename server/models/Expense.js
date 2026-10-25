@@ -22,6 +22,9 @@ const expenseSchema = new mongoose.Schema({
     date:{
         type:Date,
         default:Date.now
+    },
+    receiptUrl:{
+        type:String
     }
 }, {timestamps:true});
 

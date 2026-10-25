@@ -3,7 +3,7 @@ import Expense from "../models/Expense.js";
 import { dateFilters } from "../utils/dateFilters.js";
 
 export const addExpense = async (userId, expenseData) => {
-  const { amount, category, description, date } = expenseData;
+  const { amount, category, description, date, receiptUrl } = expenseData;
 
   const newExpense = new Expense({
     user: userId,
@@ -11,6 +11,7 @@ export const addExpense = async (userId, expenseData) => {
     category,
     description,
     date,
+    receiptUrl,
   });
   const expense = await newExpense.save();
   return expense;

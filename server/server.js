@@ -9,6 +9,7 @@ import budgetRouter from './routes/budgetRoute.js';
 import dashboardRouter from './routes/dashboardRoute.js';
 import recurringRouter from './routes/recurringExpenseRoute.js';
 import { startRecurringJob } from './services/recurringJob.js';
+import scanRouter from './routes/scanRoute.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use('/api/auth',userRouter)
 app.use('/api/budgets',budgetRouter)
 app.use('/api/dashboard',dashboardRouter)
 app.use('/api/recurring',recurringRouter)
+app.use('/api/expenses/scan', scanRouter)
 app.use(errorHandler)
 
 app.listen(PORT,()=>{
