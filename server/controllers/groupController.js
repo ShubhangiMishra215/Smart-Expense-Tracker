@@ -1,4 +1,4 @@
-import { addGroup } from "../services/group.js";
+import { addGroup, addGroupExpense } from "../services/group.js";
 import AppError from "../utils/AppError.js";
 
 export const createGroupController = async(req ,res , next)=>{
@@ -11,6 +11,19 @@ export const createGroupController = async(req ,res , next)=>{
             success : true,
             message:"Group created successfully",
             group
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const createGroupExpenseController = async(req ,res, next)=>{
+    try {
+        const groupExpense = await addGroupExpense( req.user.id, req.params.id, req.body);
+        return res.status(201).json({
+            success : true,
+            message:"Group expense created successfully",
+            groupExpense
         })
     } catch (error) {
         next(error)
