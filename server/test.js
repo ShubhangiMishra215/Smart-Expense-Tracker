@@ -1,5 +1,6 @@
 import "dotenv/config";
 import {parseExpenseText, parseReceipt} from "./services/aiParserService.js";
+import { rupeeToPaise } from "./utils/rupeeConversion.js";
 
 // try {
 //   const result = await parseExpenseText("asdf");
@@ -21,12 +22,16 @@ import {parseExpenseText, parseReceipt} from "./services/aiParserService.js";
 //   console.log("ERROR:", err.statusCode ?? err.status, err.message);
 // }
 
-import "dotenv/config";
-import fs from "fs";
-import { uploadReceipt } from "./config/cloudinary.js";
+// import "dotenv/config";
+// import fs from "fs";
+// import { uploadReceipt } from "./config/cloudinary.js";
 
-try {
-  console.log("URL:", await uploadReceipt(fs.readFileSync(process.argv[2])));
-} catch (err) {
-  console.log("ERROR:", err.statusCode ?? err.status, err.message);
-}
+// try {
+//   console.log("URL:", await uploadReceipt(fs.readFileSync(process.argv[2])));
+// } catch (err) {
+//   console.log("ERROR:", err.statusCode ?? err.status, err.message);
+// }
+
+console.log(rupeeToPaise(1.15));
+console.log(rupeeToPaise(0.07));
+console.log(rupeeToPaise(450.5));
