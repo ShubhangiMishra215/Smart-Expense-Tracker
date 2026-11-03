@@ -166,3 +166,44 @@ export const addSettlement = async (userId, groupId, data) => {
 
   return await newSettlement.save();
 };
+
+export const getSettlementSuggestions = async (groupId, requesterId) => {
+  const group = await Group.findById(groupId);
+  if (!group) throw new AppError("Group not found", 404);
+
+  if (!isMember(requesterId, group.members)) {
+    throw new AppError("You are not a member of this group", 403);
+  }
+
+  const balance = await computeBalances(group);
+  let debtor = [];
+  let creditor = [];
+  balance.forEach((amount, user) => {
+    if (amount > 0) creditor.push({ user, amount });
+    if (amount < 0) debtor.push({ user, amount: -amount });
+  });
+
+  creditor.sort((a, b) => b.amount - a.amount);
+  debtor.sort((a, b) => b.amount - a.amount);
+
+  let result = [];
+
+  while (creditor.length > 0 && debtor.length > 0) {
+    let payment = Math.min(creditor[0].amount, debtor[0].amount);
+
+    result.push({
+      from: debtor[0].user,
+      to: creditor[0].user,
+      amount: PaiseToRupee(payment),
+    });
+    creditor[0].amount -= payment;
+    debtor[0].amount -= payment;
+
+    if (creditor[0].amount === 0) creditor.shift();
+    if (debtor[0].amount == 0) debtor.shift();
+
+    creditor.sort((a, b) => b.amount - a.amount);
+    debtor.sort((a, b) => b.amount - a.amount);
+  }
+  return result;
+};

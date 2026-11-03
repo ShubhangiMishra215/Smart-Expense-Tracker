@@ -1,4 +1,4 @@
-import { addGroup, addGroupExpense, addSettlement, getGroupBalances } from "../services/group.js";
+import { addGroup, addGroupExpense, addSettlement, getGroupBalances, getSettlementSuggestions } from "../services/group.js";
 import AppError from "../utils/AppError.js";
 
 export const createGroupController = async(req ,res , next)=>{
@@ -50,6 +50,19 @@ export const addSettlementController = async(req, res, next)=>{
             success:true,
             message:"Settlement added successfully",
             settlement
+        })
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getSettlementSuggestionsController = async(req ,res ,next)=>{
+    try {
+        const result = await getSettlementSuggestions(req.params.id, req.user.id);
+        return res.status(200).json({
+            success:true,
+            message:"Suggestions fetched successfully",
+            result
         })
     } catch (error) {
         next(error);
