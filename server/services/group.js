@@ -4,7 +4,7 @@ import Group from "../models/Group.js";
 import GroupExpense from "../models/GroupExpense.js";
 import { isMember } from "../utils/isMember.js";
 import Settlement from "../models/Settlement.js";
-import { rupeeToPaise, PaiseToRupee} from "../utils/rupeeConversion.js";
+import { rupeeToPaise, PaiseToRupee } from "../utils/rupeeConversion.js";
 
 export const addGroup = async (name, creatorId, memberIds = []) => {
   const combined = [creatorId, ...memberIds];
@@ -64,17 +64,11 @@ export const addGroupExpense = async (userId, groupId, data) => {
   return await expense.save();
 };
 
-export const getGroupBalances = async (groupId, requesterId) => {
-  const group = await Group.findById(groupId);
-  if (!group) throw new AppError("Group not found", 404);
-
-  if (!isMember(requesterId, group.members)) {
-    throw new AppError("You are not a member of this group", 403);
-  }
+const computeBalances = async (group) => {
   // net balance per member in paise: positive = is owed, negative = owes
   const balances = new Map(group.members.map((m) => [String(m), 0]));
 
-  const expenses = await GroupExpense.find({ group: groupId });
+  const expenses = await GroupExpense.find({ group: group._id });
   for (const expense of expenses) {
     const payer = String(expense.payer);
     for (const share of expense.shares) {
@@ -86,7 +80,7 @@ export const getGroupBalances = async (groupId, requesterId) => {
     }
   }
 
-  const settlements = await Settlement.find({ group: groupId });
+  const settlements = await Settlement.find({ group: group._id });
   for (const s of settlements) {
     const paise = rupeeToPaise(s.amount);
     balances.set(String(s.from), balances.get(String(s.from)) + paise);
@@ -96,8 +90,79 @@ export const getGroupBalances = async (groupId, requesterId) => {
   const total = [...balances.values()].reduce((sum, b) => sum + b, 0);
   if (total !== 0) throw new AppError("Balances do not sum to zero", 500);
 
+  return balances;
+};
+
+export const getGroupBalances = async (groupId, requesterId) => {
+  const group = await Group.findById(groupId);
+  if (!group) throw new AppError("Group not found", 404);
+
+  if (!isMember(requesterId, group.members)) {
+    throw new AppError("You are not a member of this group", 403);
+  }
+
+  const balances = await computeBalances(group);
+
   return [...balances.entries()].map(([user, paise]) => ({
     user,
-    balance: paiseToRupee(paise),
+    balance: PaiseToRupee(paise),
   }));
+};
+
+export const addSettlement = async (userId, groupId, data) => {
+  const group = await Group.findById(groupId);
+  if (!group) throw new AppError("Group not found", 404);
+
+  if (!isMember(userId, group.members)) {
+    throw new AppError("You are not a member of this group", 403);
+  }
+
+  const { from, to, amount } = data;
+
+  if (!isMember(from, group.members)) {
+    throw new AppError("Sender is not a member of this group", 400);
+  }
+
+  if (!isMember(to, group.members)) {
+    throw new AppError("Receiver is not a member of this group", 400);
+  }
+
+  if (String(from) === String(to)) {
+    throw new AppError("Sender and receiver cannot be the same", 400);
+  }
+
+  if (typeof amount !== "number" || !(amount > 0)) {
+    throw new AppError("Amount must be a positive number", 400);
+  }
+
+  const total = rupeeToPaise(amount);
+
+  const balances = await computeBalances(group);
+  const fromBalance = balances.get(String(from));
+  const toBalance = balances.get(String(to));
+
+  if (fromBalance >= 0) {
+    throw new AppError("Sender does not owe anything", 400);
+  }
+  if (toBalance <= 0) {
+    throw new AppError("Receiver is not owed anything", 400);
+  }
+
+  const cap = Math.min(-fromBalance, toBalance);
+  if (total > cap) {
+    throw new AppError(
+      `Settlement exceeds the allowed amount of ₹${PaiseToRupee(cap)}`,
+      400,
+    );
+  }
+
+  const newSettlement = new Settlement({
+    group: group._id,
+    from,
+    to,
+    amount,
+    date: Date.now(),
+  });
+
+  return await newSettlement.save();
 };
