@@ -25,9 +25,16 @@ export const addRecurringExpense = async (userId, expenseData) => {
   return expense;
 };
 
-export const fetchRecurringExpense = async (userId) => {
-  const expense = await RecurringExpense.find({ user: userId, isActive: true });
-  return expense;
+export const fetchRecurringExpense = async (userId, status) => {
+  const filter = { user: userId };
+
+  if (status === undefined) filter.isActive = true;
+  else if (status === "paused") filter.isActive = false;
+  else if (status !== "all") {
+    throw new AppError("status must be 'all' or 'paused'", 400);
+  }
+
+  return RecurringExpense.find(filter);
 };
 
 export const removeRecurringExpense = async (userId, ruleId) => {

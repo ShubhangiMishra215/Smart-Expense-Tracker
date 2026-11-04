@@ -21,7 +21,7 @@ export const createRecurringExpense = async (req, res, next) => {
 
 export const getRecurringExpenses = async (req, res, next) => {
   try {
-    const recurringExpenses = await fetchRecurringExpense(req.user.id);
+    const recurringExpenses = await fetchRecurringExpense(req.user.id, req.query.status);
     return res.status(200).json({
       success: true,
       message: "Recurring expenses fetched successfully",
