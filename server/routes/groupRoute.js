@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
-import { addSettlementController, createGroupController, createGroupExpenseController, getGroupBalancesController, getSettlementSuggestionsController } from "../controllers/groupController.js";
+import { addSettlementController, createGroupController, createGroupExpenseController, getGroupBalancesController, getSettlementSuggestionsController, getUserGroupsController } from "../controllers/groupController.js";
 
 const groupRouter = express.Router();
 groupRouter.use(authenticate);
@@ -10,5 +10,6 @@ groupRouter.post("/:id/expenses",createGroupExpenseController);
 groupRouter.get("/:id/balances",getGroupBalancesController);
 groupRouter.post("/:id/settlements",addSettlementController);
 groupRouter.get("/:id/settlements/suggestions", getSettlementSuggestionsController);
+groupRouter.get("/", getUserGroupsController);
 
 export default groupRouter;

@@ -93,6 +93,11 @@ const computeBalances = async (group) => {
   return balances;
 };
 
+const getNameMap = async (ids) => {
+  const users = await User.find({ _id: { $in: ids } }).select("name");
+  return new Map(users.map((u) => [String(u._id), u.name]));
+};
+
 export const getGroupBalances = async (groupId, requesterId) => {
   const group = await Group.findById(groupId);
   if (!group) throw new AppError("Group not found", 404);
@@ -102,9 +107,11 @@ export const getGroupBalances = async (groupId, requesterId) => {
   }
 
   const balances = await computeBalances(group);
+  const names = await getNameMap([...balances.keys()]);
 
   return [...balances.entries()].map(([user, paise]) => ({
     user,
+    name: names.get(user),
     balance: PaiseToRupee(paise),
   }));
 };
@@ -205,5 +212,30 @@ export const getSettlementSuggestions = async (groupId, requesterId) => {
     creditor.sort((a, b) => b.amount - a.amount);
     debtor.sort((a, b) => b.amount - a.amount);
   }
-  return result;
+
+  const ids = [...new Set(result.flatMap((r) => [r.from, r.to]))];
+  const names = await getNameMap(ids);
+
+  return result.map((r) => ({
+    ...r,
+    fromName: names.get(r.from),
+    toName: names.get(r.to),
+  }));
+};
+
+export const getUserGroups = async (userId) => {
+  const groups = await Group.find({ members: userId }).sort({ updatedAt: -1 });
+
+  return Promise.all(
+    groups.map(async (group) => {
+      const balances = await computeBalances(group);
+      const paise = balances.get(String(userId)) ?? 0;
+      return {
+        id: group._id,
+        name: group.name,
+        memberCount: group.members.length,
+        netBalance: PaiseToRupee(paise),
+      };
+    }),
+  );
 };
