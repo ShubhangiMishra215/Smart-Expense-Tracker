@@ -217,18 +217,19 @@ export const parseReceipt = async (image) => {
   }
   console.log("RAW:", interaction.output_text);
 
-  const validDate =
+    const validDate =
     typeof parsed.date === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) &&
     !isNaN(new Date(parsed.date).getTime());
 
-  if (typeof parsed.amount !== "number" || parsed.amount <= 0 || !validDate) {
-    throw new AppError("Could not read the amount and date from the receipt", 422);
+  if (typeof parsed.amount !== "number" || parsed.amount <= 0) {
+    throw new AppError("Could not read the amount from the receipt", 422);
   }
 
   return {
     amount: parsed.amount,
-    date: parsed.date,
+    date: validDate ? parsed.date : today,
+    dateAssumed: !validDate,
     category: CATEGORIES.includes(parsed.category) ? parsed.category : "Others",
     description: typeof parsed.description === "string" ? parsed.description : "",
   };
