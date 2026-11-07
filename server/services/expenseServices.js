@@ -17,8 +17,12 @@ export const addExpense = async (userId, expenseData) => {
   return expense;
 };
 
+// services/expenseServices.js
 export const fetchExpenses = async (userId, filterData) => {
   const { filter, startDate, endDate } = filterData;
+
+  const page = Math.max(parseInt(filterData.page) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(filterData.limit) || 10, 1), 50);
 
   const query = { user: userId };
 
@@ -31,8 +35,21 @@ export const fetchExpenses = async (userId, filterData) => {
     query.date = { $gte: computedStart, $lte: computedEnd };
   }
 
-  const expenses = await Expense.find(query);
-  return expenses;
+  const [expenses, total] = await Promise.all([
+    Expense.find(query)
+      .sort({ date: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Expense.countDocuments(query),
+  ]);
+
+  return {
+    expenses,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 export const fetchExpenseById = async (expenseId, userId) => {
@@ -62,13 +79,13 @@ export const changeExpense = async (expenseId, userId, expenseData) => {
   if (category && category != oldCategory) {
     if (expense.description) {
       const keyword = expense.description.toLowerCase().trim();
-      if(keyword){
+      if (keyword) {
         await CategoryRule.findOneAndUpdate(
           { user: userId, keyword },
           { category },
           { upsert: true, new: true, runValidators: true },
         );
-      }      
+      }
     }
   }
   return expense;

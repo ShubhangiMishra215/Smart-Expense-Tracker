@@ -34,11 +34,11 @@ export const createExpense = async (req, res, next) => {
 
 export const getExpenses = async (req, res, next) => {
   try {
-    const expenses = await fetchExpenses(req.user.id, req.query);
+    const result = await fetchExpenses(req.user.id, req.query);
     return res.status(200).json({
       success: true,
       message: "Expenses found successfully",
-      expenses,
+      ...result,
     });
   } catch (error) {
     next(error);
