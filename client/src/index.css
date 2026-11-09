@@ -2,15 +2,31 @@
 
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
+
+  /* surfaces */
   --color-page: #0b0b14;
   --color-sidebar: #10101c;
   --color-card: #131320;
+  --color-input: #0f0f1a;
+  --color-hover: #1b1830;
+
+  /* borders */
   --color-line: #2a2a40;
   --color-line-soft: #242438;
+
+  /* text */
   --color-ink: #f4f3fc;
   --color-muted: #a9a8c0;
+
+  /* accent */
   --color-accent: #9587ff;
   --color-accent-soft: #b8aeff;
+  --color-accent-ink: #15112d;
   --color-nav-active: #25213f;
   --color-nav-active-ink: #d5cfff;
+
+  /* status */
+  --color-danger: #f87171;
+  --color-success: #7fd3cf;
+  --color-warning: #f0a35e;
 }

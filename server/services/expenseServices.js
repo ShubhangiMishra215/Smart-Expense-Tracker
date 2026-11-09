@@ -19,7 +19,8 @@ export const addExpense = async (userId, expenseData) => {
 
 // services/expenseServices.js
 export const fetchExpenses = async (userId, filterData) => {
-  const { filter, startDate, endDate } = filterData;
+  const { filter, startDate, endDate,search} = filterData;
+  console.log("filterData:", filterData);
 
   const page = Math.max(parseInt(filterData.page) || 1, 1);
   const limit = Math.min(Math.max(parseInt(filterData.limit) || 10, 1), 50);
@@ -34,6 +35,10 @@ export const fetchExpenses = async (userId, filterData) => {
     });
     query.date = { $gte: computedStart, $lte: computedEnd };
   }
+  if (typeof search === "string" && search.trim()) {
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query.description = { $regex: escaped, $options: "i" };
+  }
 
   const [expenses, total] = await Promise.all([
     Expense.find(query)
@@ -42,6 +47,8 @@ export const fetchExpenses = async (userId, filterData) => {
       .limit(limit),
     Expense.countDocuments(query),
   ]);
+
+  console.log("search:", search, "query:", query);
 
   return {
     expenses,

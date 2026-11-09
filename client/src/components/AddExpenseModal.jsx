@@ -1,4 +1,3 @@
-// components/AddExpenseModal.jsx
 import { useState } from "react";
 import { toast } from "react-toastify";
 import api from "../utils/api";
@@ -55,17 +54,20 @@ export default function AddExpenseModal({ isOpen, onClose, onSaved }) {
   };
 
   const inputClass =
-    "h-11 w-full rounded-xl border border-[#2E2E46] bg-[#0F0F1A] px-3 text-[#F4F3FC] outline-none focus:border-[#8274EB]";
+    "h-11 w-full rounded-xl border border-line bg-input px-3 text-ink outline-none focus:border-accent [color-scheme:dark]";
+
+  const labelClass =
+    "flex flex-col gap-1 text-sm font-semibold text-nav-active-ink";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[#3A3560] bg-[#171527] p-6 text-[#F4F3FC]"
+        className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-line bg-card p-6 text-ink"
       >
         <h2 className="text-lg font-bold">Add expense</h2>
 
-        <label className="flex flex-col gap-1 text-sm font-semibold text-[#D5CFFF]">
+        <label className={labelClass}>
           Amount (₹)
           <input
             name="amount"
@@ -77,7 +79,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSaved }) {
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm font-semibold text-[#D5CFFF]">
+        <label className={labelClass}>
           Category
           <select
             name="category"
@@ -93,7 +95,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSaved }) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-sm font-semibold text-[#D5CFFF]">
+        <label className={labelClass}>
           Description (optional)
           <input
             name="description"
@@ -103,7 +105,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSaved }) {
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm font-semibold text-[#D5CFFF]">
+        <label className={labelClass}>
           Date (optional, defaults to today)
           <input
             name="date"
@@ -114,20 +116,20 @@ export default function AddExpenseModal({ isOpen, onClose, onSaved }) {
           />
         </label>
 
-        {error && <p className="text-sm text-[#F7B3A2]">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="h-11 rounded-xl border border-[#3A3560] px-5 font-semibold text-[#E4E0FF]"
+            className="h-11 rounded-xl border border-line px-5 font-semibold text-ink hover:bg-hover"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="h-11 rounded-xl bg-[#9587FF] px-5 font-bold text-[#15112D] disabled:opacity-60"
+            className="h-11 rounded-xl bg-accent px-5 font-bold text-accent-ink disabled:opacity-60"
           >
             {loading ? "Saving..." : "Save"}
           </button>

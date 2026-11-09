@@ -7,7 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 
 const links = [
   { to: "/", label: "Overview", icon: LayoutDashboard, end: true },
-  { to: "/expenses", label: "Expenses", icon: Receipt },
+  { to: "/transactions", label: "Transactions", icon: Receipt },
   { to: "/budgets", label: "Budgets", icon: TrendingUp },
   { to: "/recurring", label: "Recurring", icon: Repeat },
   { to: "/groups", label: "Groups", icon: Users },
