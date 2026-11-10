@@ -10,9 +10,7 @@ const Overview = () => {
     <>
       <header className="flex flex-wrap items-center justify-between gap-4 py-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#F4F3FC]">
-                Welcome{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
-          </h1>
+          
           <p className="text-[13px] text-[#A9A8C0]">
             {new Date().toLocaleDateString("en-IN", {
               weekday: "long",
@@ -21,6 +19,9 @@ const Overview = () => {
               year: "numeric",
             })}
           </p>
+          <h1 className="text-2xl font-bold text-[#F4F3FC]">
+                Welcome{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+          </h1>
         </div>
         
 

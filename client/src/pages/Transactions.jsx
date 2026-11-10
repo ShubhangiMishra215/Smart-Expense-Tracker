@@ -127,7 +127,7 @@ export default function Transactions() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <p className="text-sm text-gray-400 mb-1">
+          <p className="text-[13px] text-gray-400 mb-1">
             {new Date().toLocaleDateString("en-IN", {
               weekday: "long",
               day: "numeric",
@@ -136,7 +136,7 @@ export default function Transactions() {
             })}
           </p>
           <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-gray-400 mt-5 text-sm">
             All your spending in one place. Search, review and manage it.
           </p>
         </div>
