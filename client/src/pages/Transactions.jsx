@@ -1,20 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  Search,
-  Pen,
-  Trash,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  ReceiptText,
-  X,
-  Check,
-} from "lucide-react";
+import { Search, Pen, Trash, ChevronLeft, ChevronRight, X, Check } from "lucide-react";
 import { toast } from "react-toastify";
 
 import AddExpenseModal from "../components/AddExpenseModal";
 import api from "../utils/api";
 import { CATEGORIES, getCategoryColor } from "../constants/categories";
+
+const emptyDraft = { amount: "", category: "", description: "", date: "" };
 
 export default function Transactions() {
   const [expenses, setExpenses] = useState([]);
@@ -22,87 +14,57 @@ export default function Transactions() {
   const [page, setPage] = useState(1);
   const [limit] = useState(8);
   const [totalPages, setTotalPages] = useState(1);
-
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({
-    amount: "",
-    category: "",
-    description: "",
-    date: "",
-  });
+  const [draft, setDraft] = useState(emptyDraft);
 
   const getExpenseHandler = async () => {
     try {
       setLoading(true);
-
       const { data } = await api.get(
         `/expenses?limit=${limit}&page=${page}&search=${encodeURIComponent(search)}`
       );
-
       setExpenses(data.expenses || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to fetch transactions"
-      );
+      toast.error(error.response?.data?.message || "Failed to fetch transactions");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      getExpenseHandler();
-    }, 400);
-
+    const timer = setTimeout(getExpenseHandler, 400);
     return () => clearTimeout(timer);
   }, [page, limit, search]);
 
   const formatDate = (date) => {
     if (!date) return "-";
-
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    const d = new Date(date);
+    if (d.toDateString() === new Date().toDateString()) return "Today";
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   };
 
   const startEdit = (expense) => {
     setEditingId(expense._id);
-
     setDraft({
       amount: expense.amount,
       category: expense.category,
       description: expense.description || "",
-      date: expense.date
-        ? new Date(expense.date).toISOString().slice(0, 10)
-        : "",
+      date: expense.date ? new Date(expense.date).toISOString().slice(0, 10) : "",
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({
-      amount: "",
-      category: "",
-      description: "",
-      date: "",
-    });
+    setDraft(emptyDraft);
   };
 
-  const setField = (field, value) => {
-    setDraft((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const setField = (field, value) =>
+    setDraft((prev) => ({ ...prev, [field]: value }));
 
   const saveEdit = async () => {
     try {
@@ -110,68 +72,62 @@ export default function Transactions() {
         toast.error("Please enter a valid amount");
         return;
       }
-
       await api.patch(`/expenses/${editingId}`, {
         ...draft,
         amount: Number(draft.amount),
       });
-
       toast.success("Expense updated successfully");
-
       cancelEdit();
       getExpenseHandler();
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to update expense"
-      );
+      toast.error(error.response?.data?.message || "Failed to update expense");
     }
   };
 
   const deleteExpense = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this transaction?"
-    );
-
-    if (!confirmDelete) return;
-
+    if (!window.confirm("Are you sure you want to delete this transaction?")) return;
     try {
       await api.delete(`/expenses/${id}`);
-
       toast.success("Transaction deleted successfully");
-
       if (expenses.length === 1 && page > 1) {
         setPage((prev) => prev - 1);
       } else {
         getExpenseHandler();
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to delete transaction"
-      );
+      toast.error(error.response?.data?.message || "Failed to delete transaction");
     }
   };
 
   const handleSearch = (value) => {
+    cancelEdit();
     setSearch(value);
     setPage(1);
   };
 
-  const handleSaved = () => {
-    setIsModalOpen(false);
-
-    if (page !== 1) {
-      setPage(1);
-    } else {
-      getExpenseHandler();
-    }
+  const goToPage = (newPage) => {
+    cancelEdit();
+    setPage(newPage);
   };
 
+  const handleSaved = () => {
+    setIsModalOpen(false);
+    if (page !== 1) setPage(1);
+    else getExpenseHandler();
+  };
+
+  const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
+  const rangeEnd = Math.min(page * limit, total);
+
+  const inputCls =
+    "bg-[#0B0B14] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#9587FF]";
+
   return (
-    <div className="min-h-screen bg-[#0B0B14] text-white p-4 md:p-8">
+    <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-gray-400 mb-1">
             {new Date().toLocaleDateString("en-IN", {
               weekday: "long",
               day: "numeric",
@@ -179,140 +135,76 @@ export default function Transactions() {
               year: "numeric",
             })}
           </p>
-
-          <h1 className="text-3xl font-bold tracking-tight">
-            Transactions
-          </h1>
-
-          <p className="text-gray-400 mt-2">
-            Manage and track all your expenses in one place.
+          <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+          <p className="text-gray-400 mt-1">
+            All your spending in one place. Search, review and manage it.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-[#9587FF] hover:bg-[#8473f5] text-white px-5 py-3 rounded-xl font-medium transition"
+          className="bg-[#1d1840] border border-white/10 hover:bg-[#262052] px-5 py-3 rounded-xl text-sm font-semibold transition"
         >
-          <Plus size={18} />
-          Add Expense
+          Add manually
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-[#151522] border border-white/5 rounded-2xl p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-400 text-sm">Total Transactions</p>
-            <ReceiptText className="text-[#9587FF]" size={20} />
-          </div>
-
-          <h2 className="text-3xl font-bold mt-3">{total}</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            All recorded expenses
-          </p>
-        </div>
-
-        <div className="bg-[#151522] border border-white/5 rounded-2xl p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-400 text-sm">Showing on this page</p>
-            <ReceiptText className="text-[#7FD3CF]" size={20} />
-          </div>
-
-          <h2 className="text-3xl font-bold mt-3">{expenses.length}</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Transactions per page: {limit}
-          </p>
-        </div>
-      </div>
-
       {/* Search */}
-      <div className="bg-[#151522] border border-white/5 rounded-2xl p-4 mb-5">
-        <div className="relative">
-          <Search
-            size={19}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-          />
-
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search transactions by description..."
-            className="w-full bg-[#0B0B14] border border-white/10 rounded-xl py-3 pl-12 pr-12 text-sm text-white placeholder-gray-500 outline-none focus:border-[#9587FF] transition"
-          />
-
-          {search && (
-            <button
-              onClick={() => handleSearch("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-            >
-              <X size={18} />
-            </button>
-          )}
-        </div>
+      <div className="relative w-full max-w-sm mb-5">
+        <Search
+          size={17}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+        />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Search by description"
+          className="w-full bg-[#151522] border border-white/10 rounded-xl py-3 pl-11 pr-10 text-sm text-white placeholder-gray-500 outline-none focus:border-[#9587FF] transition"
+        />
+        {search && (
+          <button
+            onClick={() => handleSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
-      {/* Transactions Table */}
+      {/* Table card */}
       <div className="bg-[#151522] border border-white/5 rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-white/5">
-          <h2 className="font-semibold text-lg">All Transactions</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Your recent spending activity
-          </p>
-        </div>
-
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#9587FF] border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-500 text-sm mt-4">
-              Loading transactions...
-            </p>
+            <p className="text-gray-500 text-sm mt-4">Loading transactions...</p>
           </div>
         ) : expenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#9587FF]/10 flex items-center justify-center mb-4">
-              <ReceiptText size={28} className="text-[#9587FF]" />
-            </div>
-
-            <h3 className="font-semibold text-lg">
-              No transactions found
-            </h3>
-
-            <p className="text-gray-500 text-sm mt-2 text-center">
+          <div className="py-20 px-4 text-center">
+            <h3 className="font-semibold text-lg">No transactions found</h3>
+            <p className="text-gray-500 text-sm mt-2">
               {search
                 ? "Try searching with a different description."
-                : "Start tracking your spending by adding your first expense."}
+                : "Add your first expense to get started."}
             </p>
-
-            {!search && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="mt-5 flex items-center gap-2 bg-[#9587FF] hover:bg-[#8473f5] px-4 py-2.5 rounded-xl text-sm font-medium transition"
-              >
-                <Plus size={16} />
-                Add Expense
-              </button>
-            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left">
+            <table className="w-full min-w-[800px] text-left">
               <thead>
-                <tr className="text-xs uppercase tracking-wider text-gray-500 border-b border-white/5">
+                <tr className="text-xs text-gray-400 border-b border-white/5">
                   <th className="px-6 py-4 font-medium">Description</th>
                   <th className="px-6 py-4 font-medium">Category</th>
                   <th className="px-6 py-4 font-medium">Date</th>
-                  <th className="px-6 py-4 font-medium">Amount</th>
-                  <th className="px-6 py-4 font-medium text-right">
-                    Actions
-                  </th>
+                  <th className="px-6 py-4 font-medium text-right">Amount</th>
+                  <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
                 {expenses.map((expense) => {
                   const isEditing = editingId === expense._id;
-                  const categoryColor = getCategoryColor(
+                  const color = getCategoryColor(
                     isEditing ? draft.category : expense.category
                   );
 
@@ -326,19 +218,20 @@ export default function Transactions() {
                         {isEditing ? (
                           <input
                             value={draft.description}
-                            onChange={(e) =>
-                              setField("description", e.target.value)
-                            }
-                            className="w-full min-w-[160px] bg-[#0B0B14] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#9587FF]"
+                            onChange={(e) => setField("description", e.target.value)}
+                            className={`${inputCls} w-full min-w-[160px]`}
                           />
                         ) : (
-                          <div>
-                            <p className="font-medium text-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
+                              style={{ color, backgroundColor: `${color}20` }}
+                            >
+                              {(expense.description || "?").charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-gray-100">
                               {expense.description || "No description"}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Expense
-                            </p>
+                            </span>
                           </div>
                         )}
                       </td>
@@ -348,29 +241,28 @@ export default function Transactions() {
                         {isEditing ? (
                           <select
                             value={draft.category}
-                            onChange={(e) =>
-                              setField("category", e.target.value)
-                            }
-                            className="bg-[#0B0B14] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#9587FF]"
+                            onChange={(e) => setField("category", e.target.value)}
+                            className={inputCls}
                           >
-                            {CATEGORIES.map((category) => (
-                              <option
-                                key={category.name}
-                                value={category.name}
-                              >
-                                {category.name}
+                            {CATEGORIES.map((c) => (
+                              <option key={c.name} value={c.name}>
+                                {c.name}
                               </option>
                             ))}
                           </select>
                         ) : (
                           <span
-                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
                             style={{
-                              color: categoryColor,
-                              backgroundColor: `${categoryColor}20`,
-                              border: `1px solid ${categoryColor}40`,
+                              color,
+                              backgroundColor: `${color}20`,
+                              border: `1px solid ${color}40`,
                             }}
                           >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
                             {expense.category}
                           </span>
                         )}
@@ -382,33 +274,29 @@ export default function Transactions() {
                           <input
                             type="date"
                             value={draft.date}
-                            onChange={(e) =>
-                              setField("date", e.target.value)
-                            }
-                            className="bg-[#0B0B14] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#9587FF] [color-scheme:dark]"
+                            onChange={(e) => setField("date", e.target.value)}
+                            className={`${inputCls} [color-scheme:dark]`}
                           />
                         ) : (
-                          <span className="text-sm text-gray-400">
+                          <span className="text-sm text-gray-300">
                             {formatDate(expense.date)}
                           </span>
                         )}
                       </td>
 
                       {/* Amount */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 text-right">
                         {isEditing ? (
                           <input
                             type="number"
                             min="0"
                             value={draft.amount}
-                            onChange={(e) =>
-                              setField("amount", e.target.value)
-                            }
-                            className="w-28 bg-[#0B0B14] border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#9587FF]"
+                            onChange={(e) => setField("amount", e.target.value)}
+                            className={`${inputCls} w-28 text-right`}
                           />
                         ) : (
-                          <span className="font-semibold text-white">
-                            ₹{Number(expense.amount).toLocaleString("en-IN")}
+                          <span className="font-bold text-white">
+                            −₹{Number(expense.amount).toLocaleString("en-IN")}
                           </span>
                         )}
                       </td>
@@ -420,36 +308,34 @@ export default function Transactions() {
                             <>
                               <button
                                 onClick={saveEdit}
-                                title="Save changes"
+                                title="Save"
                                 className="p-2 rounded-lg text-[#7FD3CF] hover:bg-[#7FD3CF]/10 transition"
                               >
-                                <Check size={18} />
+                                <Check size={17} />
                               </button>
-
                               <button
                                 onClick={cancelEdit}
-                                title="Cancel editing"
+                                title="Cancel"
                                 className="p-2 rounded-lg text-gray-400 hover:bg-white/10 transition"
                               >
-                                <X size={18} />
+                                <X size={17} />
                               </button>
                             </>
                           ) : (
                             <>
                               <button
                                 onClick={() => startEdit(expense)}
-                                title="Edit transaction"
+                                title="Edit"
                                 className="p-2 rounded-lg text-gray-400 hover:text-[#9587FF] hover:bg-[#9587FF]/10 transition"
                               >
-                                <Pen size={17} />
+                                <Pen size={16} />
                               </button>
-
                               <button
                                 onClick={() => deleteExpense(expense._id)}
-                                title="Delete transaction"
-                                className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition"
+                                title="Delete"
+                                className="p-2 rounded-lg text-red-400/80 hover:text-red-400 hover:bg-red-400/10 transition"
                               >
-                                <Trash size={17} />
+                                <Trash size={16} />
                               </button>
                             </>
                           )}
@@ -463,36 +349,31 @@ export default function Transactions() {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Footer */}
         {!loading && expenses.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-white/5">
-            <p className="text-sm text-gray-500">
-              Showing {expenses.length} of {total} transactions
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4">
+            <p className="text-sm text-gray-400">
+              Showing {rangeStart}–{rangeEnd} of {total}
             </p>
 
             <div className="flex items-center gap-3">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                onClick={() => goToPage(Math.max(1, page - 1))}
+                className="flex items-center gap-1 px-4 py-2 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 <ChevronLeft size={16} />
                 Previous
               </button>
 
               <span className="text-sm text-gray-400">
-                Page <span className="text-white font-medium">{page}</span> of{" "}
-                <span className="text-white font-medium">
-                  {totalPages}
-                </span>
+                Page {page} of {totalPages}
               </span>
 
               <button
                 disabled={page >= totalPages}
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                className="flex items-center gap-1 px-3 py-2 rounded-lg border border-white/10 text-sm text-gray-300 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                onClick={() => goToPage(Math.min(totalPages, page + 1))}
+                className="flex items-center gap-1 px-4 py-2 rounded-lg bg-[#1d1840] border border-white/10 text-sm font-semibold hover:bg-[#262052] disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 Next
                 <ChevronRight size={16} />
@@ -502,7 +383,6 @@ export default function Transactions() {
         )}
       </div>
 
-      {/* Add Expense Modal */}
       <AddExpenseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
